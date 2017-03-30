@@ -8,8 +8,6 @@
 using namespace cv;
 using namespace std;
 
-
-
 int main( int argc, char** argv ){
 
     	Mat input, output;
@@ -27,34 +25,34 @@ int main( int argc, char** argv ){
 	}
 
 	//RGB to Lab Conversion
-	Mat im1;
 	cvtColor(input, lab, CV_BGR2Lab);
 
 	//Applying Bilateral Filter
-	bilateralFilter(lab, bilateral, 15, 80, 80);
+	bilateralFilter(lab, bilateral, 15, 150, 150);
 
 	//Luminance Quantization
-	vector<Mat> lab_p;
-	split(lab, lab_p);
-	int q = 15;
-	for(int i = 0; i < lab_p[0].size().width; i++){
-		for(int j = 0; j < lab_p[0].size().height; j++){
-			float value = lab_p.at<float>(i,j);
-			int patamar = value / q;
-			if(
+	int q = 10;
+	for(int i = 0; i < lab.size().height; i++){
+		for(int j = 0; j < lab.size().width; j++){
+			Vec3b value = lab.at<Vec3b>(i,j);
+			float tax = value.val[0] / 255.0;
+			value.val[0] = (round(tax * q)/q)*255;
+			lab.at<Vec3b>(i,j) = value;
 		}
 	}
-	
+	cvtColor(lab, lab, CV_Lab2BGR);
+	imshow("depois 1", lab);
 
 	//Applying Difference of Gaussians
 	Mat g1, g2;
-	GaussianBlur(lab,g1,Size(1,1),0);
-	GaussianBlur(lab,g2,Size(5,5),0);
+	GaussianBlur(input,g1,Size(1,1),0);
+	GaussianBlur(input,g2,Size(5,5),0);
 	dog = g1 - g2;
 	dog = Scalar::all(255) - dog;
-	cvtColor(dog,dog,CV_RGB2GRAY);
 
 	//Generating presentation
+	addWeighted(dog, 0.5, lab, 0.5, 0.0, output);
+
 	Mat image(sz1.height, sz1.width+sz2.width, CV_8UC3);
 	image.adjustROI(0,0,0,-sz2.width);
 	input.copyTo(image);
@@ -63,7 +61,7 @@ int main( int argc, char** argv ){
 	output.copyTo(image);
 
 	image.adjustROI(0,0,sz1.width,0);
-    	namedWindow( "Display window", WINDOW_AUTOSIZE );
+   	namedWindow( "Display window", WINDOW_AUTOSIZE );
     	imshow( "Display window", image );
     	
 	waitKey(0);
